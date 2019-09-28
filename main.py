@@ -22,6 +22,8 @@ def yolo_camera(video,
 if __name__ == "__main__":
     logger.logger().info("启动主程序")
     video_captures = cv2.VideoCapture(0)
+    # frameGenerator = yolo_camera(video_captures, config_path='./yolo/cfg/yolov3.cfg',
+    #                              weights_path='./yolo/cfg/yolov3.weights')
     frameGenerator = yolo_camera(video_captures, confidence_thre=0.4)
     for frame in frameGenerator:
         cv2.imshow('Object Detection', frame)
