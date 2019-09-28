@@ -7,6 +7,7 @@ logger_inited = False
 
 
 def init_logger():
+    global logger_inited
     # create logger
     logger_name = "main"
     mlogger = logging.getLogger(logger_name)
@@ -32,6 +33,7 @@ def init_logger():
     fh.setFormatter(formatter)
     mlogger.addHandler(console)  # -*- encoding:utf-8 -*-
     mlogger.addHandler(fh)  # -*- encoding:utf-8 -*-
+    logger_inited = True
 
 
 def logger(name = "main"):

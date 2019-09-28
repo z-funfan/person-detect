@@ -6,32 +6,26 @@ import os
 import time
 import common.logger as logger
 
-
-class NamedImage:
-    img = None
-    name = ''
-
-    def __init__(self, path):
-        self.name = os.path.basename(path)
-        self.img = cv2.imread(path)
+LABELS = []
+COLORS = []
+net = None
+ln = None
+yolo_inited = False
 
 
-def yolo_detect(image,
-                label_path='./cfg/yolov3.txt',
-                config_path='./cfg/yolov3.cfg',
-                weights_path='./cfg/yolov3.weights',
-                confidence_thre=0.5,
-                nms_thre=0.3,
-                jpg_quality=80):
-    '''
-    pathIn：原始图片的路径
+def yolo_init(label_path='./cfg/yolov3.txt',
+              config_path='./cfg/yolov3.cfg',
+              weights_path='./cfg/yolov3.weights'):
+    """
     label_path：类别标签文件的路径
     config_path：模型配置文件的路径
     weights_path：模型权重文件的路径
-    confidence_thre：0-1，置信度（概率/打分）阈值，即保留概率大于这个值的边界框，默认为0.5
-    nms_thre：非极大值抑制的阈值，默认为0.3
-    jpg_quality：设定输出图片的质量，范围为0到100，默认为80，越大质量越好
-    '''
+    """
+    global LABELS
+    global COLORS
+    global net
+    global ln
+    global yolo_inited
 
     # 加载类别标签文件
     LABELS = open(label_path).read().strip().split("\n")
@@ -41,10 +35,6 @@ def yolo_detect(image,
     np.random.seed(42)
     COLORS = np.random.randint(0, 255, size=(nclass, 3), dtype='uint8')
 
-    # 载入图片并获取其维度
-    img = image.img
-    (H, W) = img.shape[:2]
-
     # 加载模型配置和权重文件
     logger.logger().info('从硬盘加载YOLO......')
     net = cv2.dnn.readNetFromDarknet(config_path, weights_path)
@@ -52,6 +42,35 @@ def yolo_detect(image,
     # 获取YOLO输出层的名字
     ln = net.getLayerNames()
     ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+    yolo_inited = True
+
+
+def yolo_detect(img,
+                label_path='./cfg/yolov3.txt',
+                config_path='./cfg/yolov3.cfg',
+                weights_path='./cfg/yolov3.weights',
+                confidence_thre=0.5,
+                nms_thre=0.3):
+    """
+    pathIn：原始图片的路径
+    label_path：类别标签文件的路径
+    config_path：模型配置文件的路径
+    weights_path：模型权重文件的路径
+    confidence_thre：0-1，置信度（概率/打分）阈值，即保留概率大于这个值的边界框，默认为0.5
+    nms_thre：非极大值抑制的阈值，默认为0.3
+    jpg_quality：设定输出图片的质量，范围为0到100，默认为80，越大质量越好
+    """
+    global LABELS
+    global COLORS
+    global net
+    global ln
+    global yolo_inited
+
+    if not yolo_inited:
+        yolo_init(label_path, config_path, weights_path)
+
+    # 载入图片并获取其维度
+    (H, W) = img.shape[:2]
 
     # 将图片构建成一个blob，设置图片尺寸，然后执行一次
     # YOLO前馈网络计算，最终获取边界框和相应概率
@@ -62,7 +81,7 @@ def yolo_detect(image,
     end = time.time()
 
     # 显示预测所花费时间
-    logger.logger().info('YOLO模型花费 {:.2f} 秒来预测一张图片'.format(end - start))
+    logger.logger().debug('YOLO模型花费 {:.2f} 秒来预测一张图片'.format(end - start))
 
     # 初始化边界框，置信度（概率）以及类别
     boxes = []
@@ -114,9 +133,25 @@ def yolo_detect(image,
             cv2.putText(img, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
 
     # 输出结果图片
-    cv2.imwrite('result_' + image.name, img, [int(cv2.IMWRITE_JPEG_QUALITY), jpg_quality])
+    return img
 
 
 if __name__ == "__main__":
-    img = NamedImage("./examples/dog.jpg")
-    yolo_detect(img)
+    class NamedImage:
+        img = None
+        name = ''
+
+        def __init__(self, path):
+            self.name = os.path.basename(path)
+            self.img = cv2.imread(path)
+
+    source_dir = "./examples/"
+    file_list = os.listdir(source_dir)
+    for cur_file in file_list:
+        # 获取文件的绝对路径
+        path = os.path.join(source_dir, cur_file)
+        img = NamedImage(path)
+        yolo_detect(img.img)
+        cv2.imshow('Processed Image {}'.format(img.name), img.img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
