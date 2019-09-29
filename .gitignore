@@ -2,5 +2,4 @@
 venv
 **/*.log
 .idea
-yolo/cfg/yolov3.weights
-/yolo/cfg/tiny-yolo.weights
+/yolo/cfg/*.weights

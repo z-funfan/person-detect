@@ -5,8 +5,8 @@ import yolo.yolo3_opencv as yo
 
 def yolo_camera(video,
                 label_path='./yolo/cfg/yolov3.txt',
-                config_path='./yolo/cfg/tiny-yolo.cfg',
-                weights_path='./yolo/cfg/tiny-yolo.weights',
+                config_path='./yolo/cfg/yolov3-tiny.cfg',
+                weights_path='./yolo/cfg/yolov3-tiny.weights',
                 confidence_thre=0.5):
     while True:
         # 抓取每一帧图像
@@ -22,9 +22,10 @@ def yolo_camera(video,
 if __name__ == "__main__":
     logger.logger().info("启动主程序")
     video_captures = cv2.VideoCapture(0)
+    video_captures.set(cv2.CAP_PROP_FPS, 25)
     # frameGenerator = yolo_camera(video_captures, config_path='./yolo/cfg/yolov3.cfg',
     #                              weights_path='./yolo/cfg/yolov3.weights')
-    frameGenerator = yolo_camera(video_captures, confidence_thre=0.4)
+    frameGenerator = yolo_camera(video_captures, confidence_thre=0.5)
     for frame in frameGenerator:
         cv2.imshow('Object Detection', frame)
 
